@@ -17,7 +17,7 @@ if (location.pathname === '/') {
             return;
         };
         storeInputs()
-        window.location.href = '/multiply.html'
+        window.location.href = './multiply.html'
 
     })
 
