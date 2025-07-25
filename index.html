@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <script src="./script.js" defer></script>
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="container">
+        <form action="" class="container__form">
+            <div>
+                <div class="container__form-item">
+                    <label for="">Total Questions</label>
+                    <input type="number" value="30" class="container__form-item__input" max="30" min="10" id="question">
+                </div>
+                <p class="container__form-error" id="questionValue"></p>
+            </div>
+
+            <div>
+                <div class="container__form-item">
+                    <label for="">Base</label>
+                    <input type="number" value="6" class="container__form-item__input" min="2" id="base">
+                </div>
+                <p class="container__form-error" id="baseValue"></p>
+            </div>
+
+            <div>
+                <div class="container__form-item">
+                    <label for="">Max digits</label>
+                    <input type="number" value="3" class="container__form-item__input" min="1" id="digits">
+                </div>
+                <p class="container__form-error" id="digitsValue"></p>
+            </div>
+
+            <div>
+                <div class="container__form-item">
+                    <label for="">Max duration</label>
+                    <input type="number" value="30" class="container__form-item__input" min="5" max="60" id="duration">
+                </div>
+                <p class="container__form-error" id="durationValue"></p>
+            </div>
+
+
+            <button type="submit" class="container__form-submit"> Let's Go</button>
+        </form>
+    </div>
+</body>
+
+
+</html>
