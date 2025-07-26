@@ -1,3 +1,4 @@
+const formContainer = document.querySelector('.container')
 const form = document.querySelector('.container__form')
 const question = document.getElementById('question')
 const digits = document.getElementById('digits')
@@ -7,141 +8,246 @@ const durationCounter = document.querySelector('.multiply__duration-time')
 const questionDisplay = document.getElementById('questionDisplay')
 const questionBase = document.getElementById('quetsionBase')
 const answer = document.getElementById('answer')
+const testEnviron = document.querySelector('.multiply')
+const resultEnviron = document.querySelector('.result')
 const next = document.getElementById('multiply__submit')
-if (location.pathname === '/') {
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const error = validateInputs()
-        if (error.length > 0) {
-            displayErrors(error)
-            return;
-        };
-        storeInputs()
-        window.location.href = './multiply.html'
+const questionError = document.getElementById('questionValue')
+const baseError = document.getElementById('baseValue')
+const digitError = document.getElementById('digitValue')
+const durationError = document.getElementById('durationValue')
+form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const error = validateInputs()
+    if (error.length > 0) {
+        displayErrors(error)
+        return;
+    };
 
+    testConfigs['totalQuestions'] = question.value
+    testConfigs['maxDuration'] = duration.value
+    testConfigs['maxDigits'] = digits.value
+    testConfigs['base'] = base.value
+
+    startTest()
+})
+
+function validateInputs() {
+    const errors = []
+    const questionValue = question.value
+    if (questionValue === '') errors.push({ questionValue: 'Please Enter Question Numbers' })
+    const digitValue = digits.value
+    if (digitValue === '') errors.push({ digitValue: 'Please Enter digits Numbers' })
+    const baseValue = base.value
+    if (baseValue === '') errors.push({ baseValue: 'Please Enter base Numbers' })
+    const durationValue = duration.value
+    if (durationValue === '') errors.push({ durationValue: 'Please Enter duration Numbers' })
+
+    return errors
+}
+
+function displayErrors(errors) {
+    errors.map((items) => {
+        const keys = Object.keys(items)
+        const value = Object.values(items)
+        document.getElementById(keys[0]).innerText = value[0]
     })
+}
+const elements = [{
+    element: question,
+    errorTag: questionError
+}, {
+    element: base,
+    errorTag: baseError
+}, {
+    element: digits,
+    errorTag: digitError
+}, {
+    element: duration,
+    errorTag: durationError
+}]
+elements.map(element => clearError(element.element, element.errorTag))
+function clearError(element, errorTag) {
+    element.addEventListener('input', () => {
+        errorTag.innerText = ''
+    })
+}
 
-    function validateInputs() {
-        const errors = []
-        const questionValue = question.value
-        if (questionValue === '') errors.push({ questionValue: 'Please Enter Question Numbers' })
-        const digitValue = digits.value
-        if (digitValue === '') errors.push({ digitValue: 'Please Enter digits Numbers' })
-        const baseValue = base.value
-        if (baseValue === '') errors.push({ baseValue: 'Please Enter base Numbers' })
-        const durationValue = duration.value
-        if (durationValue === '') errors.push({ durationValue: 'Please Enter duration Numbers' })
+const testConfigs = {}
+let stats;
+let correctionsCode;
+function startTest() {
+    formContainer.style.display = 'none'
+    testEnviron.style.display = 'flex'
+    const questions = generateQuestions()
+    console.log(questions)
 
-        return errors
-    }
-
-    function displayErrors(errors) {
-        errors.map((items) => {
-            const keys = Object.keys(items)
-            const value = Object.values(items)
-            document.getElementById(keys[0]).innerText = value[0]
-        })
-    }
-
-    function storeInputs() {
-        const data = {
-            question: question.value,
-            digits: digits.value,
-            base: base.value,
-            duration: duration.value
-        }
-        localStorage.setItem('data', JSON.stringify(data))
-    }
-    function storeInputs() {
-        const data = {
-            question: question.value,
-            digits: digits.value,
-            base: base.value,
-            duration: duration.value
-        }
-        localStorage.setItem('data', JSON.stringify(data))
-    }
-} else {
-
-
-
-    const data = JSON.parse(localStorage.getItem('data'))
-    let trackQuestion = 0;
-    const submittedAnswers = []
-    const questionLength = Number(data.question)
-    const questionList = generateQuestions(questionLength)
-    const answers = questionList.map(question => question * data.base)
-    let cancel
-    Run()
-
+    let tracker = 0;
+    let timeTracker;
+    let cancelInterval;
+    displayQuestion(questions[tracker])
+    answer.focus()
+    cancelInterval = countDown();
+    next.addEventListener('click', () =>
+        Next(cancelInterval)
+    )
     function Run() {
-        cancel = countDown()
-        if (trackQuestion === questionLength - 1) {
+        answer.focus()
+        answer.value=''
+        displayQuestion(questions[tracker])
+        const id = countDown();
+        if (tracker === testConfigs.totalQuestions - 1) {
             next.innerText = 'Submit'
-            displayResults()
+        }
+        return id
+    }
+    function Next(sessionId) {
+        sessionId ? sessionId() : ''
+
+        questions[tracker]['submittedAnswer'] = answer?.value ? answer?.value : '';
+        questions[tracker]['timeTaken'] = timeTracker;
+        tracker += 1
+        if (next.innerText === 'Submit') {
+            console.log(questions)
+            stats = calculation(questions)
+            correctionsCode=corrections(questions)
+         
+            result()
             return;
         }
-        questionDisplay.innerText = questionList[trackQuestion]
-        questionBase.innerText = data.base
-
-
+        cancelInterval = Run()
     }
 
-    next.addEventListener('click', () => {
-        cancel()
-        Next('28')
-    })
     function countDown() {
-        let a = questionList[trackQuestion].toString().length < 3 ? 10 : 20
-
+        let a = testConfigs.maxDuration
+        durationCounter.innerText = a
         const id = setInterval(() => {
-
-            a -= 1
-            if (a === 0) {
+            if (a - 1 === 0) {
+                timeTracker = a
                 clearInterval(id);
                 Next()
             }
+            a -= 1
+            timeTracker = a
             durationCounter.innerText = a
 
-        }, 1000)
+        }, 999)
 
         return () => clearInterval(id)
     }
 
+}
 
-    function generateQuestions(questionLength) {
-        const questions = []
-        for (let index = 0; index < questionLength; index++) {
-            questions.push(recul(data.digits))
+function calculation(questions) {
+    const correct = questions.reduce((a, b) => {
+        if (b.answer == b.submittedAnswer) {
+            return a + 1
         }
-        return questions
-    }
+        return a
+    }, 0)
+    console.log(correct)
+    const incorrect = questions.length - correct
+    const totalTime = questions.reduce((a, b) => {
+        return a + b.timeTaken
+    }, 0)
+    const averageTimePerQuestion = totalTime / questions.length
 
-    function recul() {
-        const gen = Math.floor(Math.random() * 1000)
-        if (!data.digits) return
-        if (gen.toLocaleString().length == data.digits) {
-            return gen
-        }
-        return recul()
-    }
+    return [correct, incorrect, totalTime, averageTimePerQuestion]
+}
 
-    function Next() {
-        trackQuestion += 1
-        submittedAnswers.push(answer.value)
-        Run()
+function displayQuestion(question) {
+    questionDisplay.innerText = question.question
+    questionBase.innerText = testConfigs.base
+}
+function generateQuestions() {
+    const questions = []
+    for (let index = 0; index < testConfigs.totalQuestions; index++) {
+        const question = recul(testConfigs.maxDigits)
+        const answer = Number(question) * Number(testConfigs.base)
+        questions.push({ question, answer })
     }
-    function displayResults() {
-        const output = answers.map((answer, index) => {
-            return answer == submittedAnswers[index]
-        })
-        console.log('answers', answers)
-        console.log('sub', submittedAnswers)
-        alert(output.reduce((a, c) => a + c, 0))
-       
+    return questions
+}
+
+function recul(limit = 3) {
+    const gen = Math.floor(Math.random() * Math.pow(10,limit))
+    if (gen.toString().length == limit) {
+        return gen
     }
+    return recul()
+}
+
+function corrections(questions) {
+   return questions.map((question, index) => {
+        return `<div class="result__review-content ${(question.submittedAnswer == question.answer)?'correct':'incorrect'}">
+
+                <div class="result__review-question  ${(question.submittedAnswer == question.answer)?'co':'in'}">
+                    <span>Q${index+1}:</span>  <span>${question.question} </span> x <span>${testConfigs.base}</span> = ?
+                </div>
+                <div class="result__review-corrections">
+                    <span>Your answer:</span><span>${question.submittedAnswer}</span> | <span>Correct answer:</span><span>${question.answer}</span>
+                </div>
+            </div>`
+    })
+}
+
+function result() {
+    testEnviron.style.display = 'none'
+    resultEnviron.style.display = 'flex'
+    resultEnviron.innerHTML = `<div class="result__outcome">
+            <div class="result__outcome-item" id="totalQuestion">
+                <p>
+                    Total Questions:
+                </p>
+                <p>
+                    ${stats[0] + stats[1]}
+                </p>
+            </div>
+            <div class="result__outcome-item" id="correct">
+                <p>
+                    Correct Answers:
+                </p>
+                <p>
+                    ${stats[0]}
+                </p>
+            </div>
+            <div class="result__outcome-item" id="incorrect">
+                <p>
+                    Incorrect Answers:
+                </p>
+                <p>
+                    ${stats[1]}
+                </p>
+            </div>
+            <div class="result__outcome-item" id="totalQuestion">
+                <p>
+                    Total Time Taken:
+                </p>
+                <p>
+                    ${stats[2]} s
+                </p>
+            </div>
+            <div class="result__outcome-item" id="totalQuestion">
+                <p>
+                    Average Time Per Question:
+                </p>
+                <p>
+                    ${stats[3]} s
+                </p>
+            </div>
+        </div>
+        
+        <div class="result__review">
+            <p class="result__review-header"> Question Review</p>
+
+            ${correctionsCode.join('')}
+            
+        </div>
+        
+        <button  class="container__form-submit" onclick=restore() > Another Test</button>`
+
 }
 
 
-
-
+function restore() {
+    location.reload()
+}
