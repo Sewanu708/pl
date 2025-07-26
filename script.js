@@ -90,6 +90,9 @@ function startTest() {
     next.addEventListener('click', () =>
         Next(cancelInterval)
     )
+        document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') Next(cancelInterval)
+    })
     function Run() {
         answer.focus()
         answer.value=''
